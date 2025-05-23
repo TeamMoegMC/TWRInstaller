@@ -24,7 +24,6 @@
 package com.khjxiaogu.tssap;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.instrument.Instrumentation;
 
 import com.khjxiaogu.tssap.util.FileUtil;

@@ -32,15 +32,24 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class FileUtil {
 	public static void transfer(InputStream i,OutputStream os) throws IOException {
 		int nRead;
 		byte[] data = new byte[4096];
-	
 		try {
-			while ((nRead = i.read(data, 0, data.length)) != -1) { os.write(data, 0, nRead); }
+			while ((nRead = i.read(data, 0, data.length)) != -1) {
+				os.write(data, 0, nRead);
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			throw e;
@@ -66,6 +75,11 @@ public class FileUtil {
 	public static void transfer(InputStream i,File f) throws IOException {
 		try (FileOutputStream fos=new FileOutputStream(f)){
 			transfer(i,fos);
+		}
+	}
+	public static void transferWithListener(InputStream i,File f,Consumer<Long> readed) throws IOException {
+		try (FileOutputStream fos=new FileOutputStream(f)){
+			transferWithListener(i,fos,readed);
 		}
 	}
 	public static void transfer(String i,File os) throws IOException {
@@ -144,15 +158,27 @@ public class FileUtil {
 			return readIgnoreSpace(fis);
 		}
 	}
+	static final List<HttpURLConnection> connections=Collections.synchronizedList(new ArrayList<>());
 	public static InputStream fetch(String url) throws IOException {
 		HttpURLConnection huc2 = (HttpURLConnection) new URL(url).openConnection();
 		huc2.setRequestMethod("GET");
 		huc2.setDoOutput(true);
 		huc2.setDoInput(true);
 		huc2.connect();
+		connections.add(huc2);
 		if(huc2.getResponseCode()==200)
 			return huc2.getInputStream();
 		throw new IOException("HTTP"+huc2.getResponseCode()+" "+huc2.getResponseMessage()+" got while fetching "+url);
+	}
+	public static void closeConnection() {
+		for(HttpURLConnection hucs:connections) {
+			try {
+				hucs.disconnect();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	public static InputStream fetchWithRetry(String url,int maxRetry) throws IOException {
 		int cRetry=maxRetry;
@@ -165,26 +191,5 @@ public class FileUtil {
 		}while(--cRetry>0);
 		throw new IOException("fetch "+url+" failed "+maxRetry+" times, no more tries.");
 	}
-	public static HttpURLConnection fetchWithSize(String url) throws IOException {
-		HttpURLConnection huc2 = (HttpURLConnection) new URL(url).openConnection();
-		huc2.setRequestMethod("GET");
-		huc2.setDoOutput(true);
-		huc2.setDoInput(true);
-		huc2.connect();
-		long ctl=huc2.getContentLengthLong();
-		if(huc2.getResponseCode()==200)
-			return huc2;
-		throw new IOException("HTTP"+huc2.getResponseCode()+" "+huc2.getResponseMessage()+" got while fetching "+url);
-	}
-	public static HttpURLConnection fetchWithRetryAndSize(String url,int maxRetry) throws IOException {
-		int cRetry=maxRetry;
-		do {
-			try {
-				return fetchWithSize(url);
-			}catch(IOException ex) {
-				LogUtil.addError("fetch "+url+" failed, retries "+(maxRetry-cRetry)+"/"+maxRetry, ex);
-			}
-		}while(--cRetry>0);
-		throw new IOException("fetch "+url+" failed "+maxRetry+" times, no more tries.");
-	}
+
 }

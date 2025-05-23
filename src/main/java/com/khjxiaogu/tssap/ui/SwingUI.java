@@ -25,7 +25,6 @@ package com.khjxiaogu.tssap.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Rectangle;
 import java.awt.Taskbar;
 import java.awt.Taskbar.State;
 import java.awt.event.ActionEvent;
@@ -37,21 +36,13 @@ import java.util.function.Consumer;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
-import javax.swing.plaf.basic.BasicComboBoxUI;
-import javax.swing.plaf.basic.BasicComboPopup;
-import javax.swing.plaf.basic.ComboPopup;
-
 import com.khjxiaogu.tssap.Main;
 import com.khjxiaogu.tssap.entity.ChannelItem;
 import com.khjxiaogu.tssap.entity.LocalConfig;

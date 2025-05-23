@@ -23,7 +23,6 @@
  */
 package com.khjxiaogu.tssap.task;
 
-import java.io.IOException;
 import java.util.function.Consumer;
 
 public abstract class AbstractTask implements Runnable {

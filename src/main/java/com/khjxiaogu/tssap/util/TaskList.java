@@ -23,10 +23,7 @@
  */
 package com.khjxiaogu.tssap.util;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +47,7 @@ public class TaskList {
 		return hasFailed;
 	}
 	
-	LinkedList<AbstractTask> tasks=new LinkedList<>();
+	volatile LinkedList<AbstractTask> tasks=new LinkedList<>();
 	
 	AtomicInteger it=new AtomicInteger(0);
 	
@@ -86,13 +83,13 @@ public class TaskList {
 		
 	};
 	
-	int complete;
+	volatile int complete;
 
-	int total;
+	volatile int total;
 	
-	int failed;
+	volatile int failed;
 	
-	boolean hasFailed;
+	volatile boolean hasFailed;
 	
 	/**
 	 * Get existing tasks.
@@ -128,9 +125,17 @@ public class TaskList {
 		updateProgress.start();
 		executor.shutdown();
 		
-		while(true)
-			if(executor.awaitTermination(1, TimeUnit.SECONDS))
-				break;
+
+		try {
+			while(true) {
+				//System.out.println(executor.isShutdown()+","+executor);
+				if(executor.awaitTermination(1, TimeUnit.SECONDS)||executor.isTerminated())
+					break;
+				Thread.sleep(1000);
+			}
+	
+		} catch (InterruptedException e) {
+		}
 		updateProgress.interrupt();
 		try {
 			updateProgress.join();
@@ -157,13 +162,15 @@ public class TaskList {
 		for(AbstractTask task:tasks)
 			executor.submit(task);
 	}
-	
+	boolean isTerminated;
 	/**
 	 * Terminate all tasks.
 	 */
 	public void terminate() {
-		if(executor.isShutdown()) {
+		if(!isTerminated) {
+			isTerminated=true;
 			hasFailed=true;
+			FileUtil.closeConnection();
 			executor.shutdownNow();
 			updateProgress.interrupt();
 			try {
@@ -172,6 +179,7 @@ public class TaskList {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+
 			DefaultUI.getDefaultUI().setProgress(Lang.getLang("progress.terminating"), -1);
 			
 			

@@ -26,11 +26,9 @@ package com.khjxiaogu.tssap.task;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.nio.file.Path;
 import java.util.zip.InflaterInputStream;
 
-import com.khjxiaogu.tssap.Main;
 import com.khjxiaogu.tssap.entity.ModPackFile;
 import com.khjxiaogu.tssap.ui.Lang;
 import com.khjxiaogu.tssap.util.FileUtil;
@@ -46,7 +44,7 @@ public class ModPackInstallTask extends AbstractFileTask {
 		if(packfile.size>0)
 			size=packfile.size;
 	}
-
+	long lastPercent;
 	@Override
 	public void runTask() {
 		Path curfile = file.toPath();
@@ -67,19 +65,29 @@ public class ModPackInstallTask extends AbstractFileTask {
 		super.backup();
 		if (!isFailed()) {
 			try {
-				HttpURLConnection netConn = FileUtil.fetchWithRetryAndSize(packfile.link, 3);
-				long ctl=netConn.getContentLengthLong();
-				if(ctl>0)
-					size=ctl;
-				InputStream netFile=netConn.getInputStream();
-				if (packfile.compressed)
-					netFile = new InflaterInputStream(netFile);
-				FileUtil.transfer(netFile, file);
-				this.setCompleted();
-				return;
-			} catch (IOException e) {
-				//Main.reportNetworkFail();
-				LogUtil.addError("can not download or create file", e);
+				try {
+					LogUtil.addLog("downloading "+packfile.file);
+					InputStream netFile = FileUtil.fetchWithRetry(packfile.link, 3);
+					/*long ctl=netConn.getContentLengthLong();
+					if(ctl>0)
+						size=ctl;*/
+					if (packfile.compressed)
+						netFile = new InflaterInputStream(netFile);
+					FileUtil.transferWithListener(netFile, file,t->{
+						long curPercent=t*20/size;
+						if(curPercent!=lastPercent) {
+							lastPercent=curPercent;
+							System.out.println("downloading "+packfile.file+":"+t+"/"+size);
+						}
+					});
+					this.setCompleted();
+					return;
+				} catch (IOException e) {
+					//Main.reportNetworkFail();
+					LogUtil.addError("can not download or create file", e);
+				}
+			}catch(Exception ex) {
+				
 			}
 			this.setFailed();
 		}
@@ -95,7 +103,7 @@ public class ModPackInstallTask extends AbstractFileTask {
 	public String getBackupEntry() {
 		return packfile.file;
 	}
-
+	
 	@Override
 	public long getTaskDifficulty() {
 		return size;

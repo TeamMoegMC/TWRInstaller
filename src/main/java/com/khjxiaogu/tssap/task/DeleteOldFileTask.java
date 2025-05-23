@@ -24,26 +24,25 @@
 package com.khjxiaogu.tssap.task;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.zip.InflaterInputStream;
-
 import com.khjxiaogu.tssap.entity.ModPackFile;
 import com.khjxiaogu.tssap.ui.Lang;
-import com.khjxiaogu.tssap.util.FileUtil;
-import com.khjxiaogu.tssap.util.HashUtil;
 import com.khjxiaogu.tssap.util.LogUtil;
 
 public class DeleteOldFileTask extends AbstractFileTask {
-	ModPackFile packfile;
+	String packfile;
 
 	public DeleteOldFileTask(ModPackFile packfile) {
 		super(new File(new File("./"),packfile.file));
-		this.packfile = packfile;
+		this.packfile = packfile.file;
 	}
 
+	public DeleteOldFileTask(String packfile) {
+		super(new File(new File("./"),packfile));
+		this.packfile = packfile;
+	}
+	boolean isDeleted=false;
 	@Override
 	public void runTask() {
 		Path curfile = file.toPath();
@@ -60,6 +59,7 @@ public class DeleteOldFileTask extends AbstractFileTask {
 		super.backup();
 		if (!isFailed()) {
 			if(file.delete()) {
+				isDeleted=true;
 				this.setCompleted();
 			}else
 				this.setFailed();
@@ -69,13 +69,19 @@ public class DeleteOldFileTask extends AbstractFileTask {
 	}
 
 	@Override
+	public void rollback() throws IOException {
+		if(isDeleted)
+			super.rollback();
+	}
+
+	@Override
 	public String getTaskDesc() {
 		return Lang.getLang("file.delete", file);
 	}
 
 	@Override
 	public String getBackupEntry() {
-		return packfile.file;
+		return packfile;
 	}
 
 	@Override

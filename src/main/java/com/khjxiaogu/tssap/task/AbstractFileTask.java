@@ -70,10 +70,16 @@ public abstract class AbstractFileTask extends AbstractTask {
 				FileUtil.transfer(new ByteArrayInputStream(fileData), file);
 			else
 				LogUtil.addLog("rollback failed, no previous backup.");
-		}else
-			if(file.exists())
+		}else if(hasBackup)
+			if(file.exists()) {
 				file.delete();
+				System.out.println("delete file "+this);
+			}
 			
+	}
+	@Override
+	public String toString() {
+		return "AbstractFileTask [existsBefore=" + existsBefore + ", hasBackup=" + hasBackup + "]";
 	}
 	public byte[] getFileData() {
 		return fileData;

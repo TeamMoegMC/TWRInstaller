@@ -29,8 +29,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -198,7 +202,7 @@ public class Main {
 		ChannelItem selectedChannel=getSelectedChannel(config);
 		if(!isEmpty(data.cachedChannel)&&!isEmpty(config.selectedVersion)) {//check if skip needed if local config does not require any update.
 			if(Objects.equals(selectedChannel.id, data.cachedChannel)) {
-				if(!isEmpty(data.cachedModpack)&&Objects.equals(data.cachedModpack.version,config.selectedVersion!=null)) {
+				if(!isEmpty(data.cachedModpack)&&Objects.equals(data.cachedModpack.version,config.selectedVersion)) {
 					exit();
 				}
 			}
@@ -242,7 +246,7 @@ public class Main {
 		}
 		TaskList tasks=new TaskList();
 		//create tasks 
-		updateModpackTask(config,tasks,modpack,data.cachedModpack);
+		updateModpackTask(config,tasks,modpack,data.cachedModpack,false);
 		updateLibraryTask(tasks,modpack);
 		updateLocalDataTask(tasks,data,modpack,selectedChannel);
 		//begin task multi-threaded
@@ -263,7 +267,7 @@ public class Main {
 	public static void repairOnly(LocalData data,LocalConfig config) throws Exception {
 		TaskList tasks=new TaskList();
 		//create tasks 
-		updateModpackTask(config,tasks,data.cachedModpack,data.cachedModpack);
+		updateModpackTask(config,tasks,data.cachedModpack,data.cachedModpack,true);
 		updateLibraryTask(tasks,data.cachedModpack);
 		//begin task multi-threaded
 		tasks.start();
@@ -427,7 +431,6 @@ public class Main {
 		File packupFolder=new File("tssap-backup");
 		packupFolder.mkdirs();
 		SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-		Path mainloc = new File("./").toPath();
 		File backupFile=new File(packupFolder,sdf.format(new Date())+".zip");
 		try(ZipOutputStream zos=new ZipOutputStream(new FileOutputStream(backupFile))){
 			for(AbstractTask task:tasks.getTasks()) {
@@ -477,7 +480,7 @@ public class Main {
 	 * @param cached the cached
 	 * @throws UpdateNotRequiredException the update not required exception
 	 */
-	public static void updateModpackTask(LocalConfig config,TaskList tasks,Modpack modpack,Modpack cached) throws UpdateNotRequiredException {
+	public static void updateModpackTask(LocalConfig config,TaskList tasks,Modpack modpack,Modpack cached,boolean forceRepair) throws UpdateNotRequiredException {
 		List<String> ignores=new ArrayList<>();
 		if(config.updateIgnores!=null)
 			ignores.addAll(config.updateIgnores);
@@ -505,6 +508,51 @@ public class Main {
 					}
 					tasks.addTask(new DeleteOldFileTask(mpf));
 				}
+			}
+		}
+		if(forceRepair) {
+			System.out.println("force repair required ");
+			Path mcf=new File("./").getAbsoluteFile().toPath();
+			try {
+				Files.walkFileTree(mcf,new FileVisitor<Path>(){
+
+					@Override
+					public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+						String path=mcf.relativize(dir).toString();
+						System.out.println("checking directory "+path);
+						if(!(path.startsWith("config")||path.startsWith("mods")||path.startsWith("defaultconfigs")||path.startsWith("kubejs")||path.isEmpty()))	
+							return FileVisitResult.SKIP_SUBTREE;
+						return FileVisitResult.CONTINUE;
+					}
+
+					@Override
+					public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+						String path=mcf.relativize(file).toString().replace(File.separator, "/");
+						System.out.println("checking file "+path);
+						if(!(path.startsWith("config/")||path.startsWith("mods/")||path.startsWith("defaultconfigs/")||path.startsWith("kubejs/")))
+							return FileVisitResult.CONTINUE;
+						
+						if((!addedFiles.contains(path))) {
+							System.out.println("found abundant file "+path);
+							tasks.addTask(new DeleteOldFileTask(path));
+						}
+						return FileVisitResult.CONTINUE;
+					}
+
+					@Override
+					public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+						return FileVisitResult.CONTINUE;
+					}
+
+					@Override
+					public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+						return FileVisitResult.CONTINUE;
+					}
+					
+				});
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 
