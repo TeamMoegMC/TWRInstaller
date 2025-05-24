@@ -91,12 +91,17 @@ public class SwingUI implements UI {
 		Class.forName("java.awt.Taskbar");
 		taskBarSupport=i->{
 			
-			Taskbar taskbar = Taskbar.getTaskbar();
-			if(i<0)
-				taskbar.setWindowProgressState(f, State.INDETERMINATE);
-			else {
-				taskbar.setWindowProgressState(f, State.NORMAL);
-				taskbar.setWindowProgressValue(f, i);   
+			
+			try {
+				Taskbar taskbar = Taskbar.getTaskbar();
+				if(i<0)
+					taskbar.setWindowProgressState(f, State.INDETERMINATE);
+				else {
+					taskbar.setWindowProgressState(f, State.NORMAL);
+					taskbar.setWindowProgressValue(f, i);   
+				}
+			}catch(UnsupportedOperationException usoe) {
+				
 			}
 			
 		};
