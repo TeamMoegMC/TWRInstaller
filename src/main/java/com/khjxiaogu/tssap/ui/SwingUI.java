@@ -115,7 +115,7 @@ public class SwingUI implements UI {
 					taskbar.setWindowProgressValue(f, i);   
 				}
 			}catch(UnsupportedOperationException usoe) {
-				
+				taskBarSupport=null;
 			}
 			
 		};
