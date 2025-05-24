@@ -1,33 +1,30 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 TeamMoeg
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package com.khjxiaogu.tssap.ui;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.IOException;
-import java.util.ListIterator;
-import java.util.Objects;
 import java.util.Scanner;
-
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JProgressBar;
-import javax.swing.UIManager;
-import javax.swing.border.EmptyBorder;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
-import javax.swing.plaf.basic.BasicComboBoxUI;
-import javax.swing.plaf.basic.BasicComboPopup;
-import javax.swing.plaf.basic.ComboPopup;
 
 import com.khjxiaogu.tssap.Main;
 import com.khjxiaogu.tssap.entity.ChannelItem;
@@ -35,7 +32,6 @@ import com.khjxiaogu.tssap.entity.LocalConfig;
 import com.khjxiaogu.tssap.entity.PackMeta;
 import com.khjxiaogu.tssap.entity.Version;
 import com.khjxiaogu.tssap.entity.Versions;
-import com.khjxiaogu.tssap.util.LogUtil;
 import com.khjxiaogu.tssap.util.ShutdownHandler;
 
 public class HeadLessUI implements UI {
@@ -65,12 +61,13 @@ public class HeadLessUI implements UI {
 	}
 	private static String readline() throws IOException {
 		String rslt="";
-		Scanner sc=new Scanner(System.in);
-		rslt=sc.nextLine();
-		
-		
-		while(System.in.available()>0)System.in.read();
-		return rslt;
+		try(Scanner sc=new Scanner(System.in)){
+			rslt=sc.nextLine();
+			
+			
+			while(System.in.available()>0)System.in.read();
+			return rslt;
+		}
 	}
 	@Override
 	public String[] getUserOperation(LocalConfig config) throws Exception {
@@ -99,10 +96,6 @@ public class HeadLessUI implements UI {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		
-		
-		JDialog f2 = new JDialog();
 		
 		
 		System.out.println(Lang.getLang("installer.header.channels"));
